@@ -12,10 +12,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import java.awt.Window; //pour le parcourir les windows
 
 
 import modele.*;
-
 
 /** Cette classe a deux fonctions :
  *  (1) Vue : proposer une représentation graphique de l'application (cases graphiques, etc.)
@@ -33,15 +33,18 @@ public class VueControleur extends JFrame implements Observer {
     private ImageIcon icoVide;
     private ImageIcon icoMur;
     private ImageIcon icoBloc;
-
-
+    private ImageIcon icoIce;  //ajouter Ice
+    private boolean isPaused; // Pour Indiquer l'etat courant
+    private ImageIcon pauseImage; // Image Pause
     private JLabel[][] tabJLabel; // cases graphique (au moment du rafraichissement, chaque case va être associée à une icône, suivant ce qui est présent dans le modèle)
-
+    private JDialog dialog; // 存储暂停对话框的引用
 
     public VueControleur(Jeu _jeu) {
         sizeX = jeu.SIZE_X;
         sizeY = _jeu.SIZE_Y;
         jeu = _jeu;
+
+        isPaused = false;
 
         chargerLesIcones();
         placerLesComposantsGraphiques();
@@ -54,28 +57,36 @@ public class VueControleur extends JFrame implements Observer {
     }
 
     private void ajouterEcouteurClavier() {
-        addKeyListener(new KeyAdapter() { // new KeyAdapter() { ... } est une instance de classe anonyme, il s'agit d'un objet qui correspond au controleur dans MVC
+        addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                switch(e.getKeyCode()) {  // on regarde quelle touche a été pressée
-
-                    case KeyEvent.VK_LEFT : jeu.deplacerHeros(Direction.gauche); break;
-                    case KeyEvent.VK_RIGHT : jeu.deplacerHeros(Direction.droite); break;
-                    case KeyEvent.VK_DOWN : jeu.deplacerHeros(Direction.bas); break;
-                    case KeyEvent.VK_UP : jeu.deplacerHeros(Direction.haut); break;
-
-
+                if (e.getKeyCode() == KeyEvent.VK_P) {  //Quand on appuie le P sur clavier
+                    if (isPaused) {
+                        isPaused = false;
+                        mettreAJourAffichage();
+                    } else {
+                        isPaused = true;
+                        afficherPauseMenu(); // Le menu pause s'affiche pendant la pause.
+                    }
+                } else if (!isPaused) { // Répondre aux pressions sur les touches fléchées uniquement lorsque le jeu n'est pas en pause
+                    switch (e.getKeyCode()) {
+                        case KeyEvent.VK_LEFT: jeu.deplacerHeros(Direction.gauche); break;
+                        case KeyEvent.VK_RIGHT: jeu.deplacerHeros(Direction.droite); break;
+                        case KeyEvent.VK_DOWN: jeu.deplacerHeros(Direction.bas); break;
+                        case KeyEvent.VK_UP: jeu.deplacerHeros(Direction.haut); break;
+                    }
                 }
             }
         });
     }
-
 
     private void chargerLesIcones() {
         icoHero = chargerIcone("Images/Pacman.png");
         icoVide = chargerIcone("Images/Vide.png");
         icoMur = chargerIcone("Images/Mur.png");
         icoBloc = chargerIcone("Images/Colonne.png");
+        icoIce = chargerIcone("Images/Fantome.png"); //temp
+        pauseImage =chargerIcone("Images/Pause.jpg"); //pauseImage
     }
 
     private ImageIcon chargerIcone(String urlIcone) {
@@ -89,6 +100,32 @@ public class VueControleur extends JFrame implements Observer {
         }
 
         return new ImageIcon(image);
+    }
+
+    // Créer une boîte de dialogue pour afficher l'image de pause
+    private void afficherPauseMenu() {
+        if (dialog == null) {
+            dialog = new JDialog(this, "Pause", true);
+            dialog.getContentPane().add(new JLabel(pauseImage));
+            dialog.setSize(pauseImage.getIconWidth(), pauseImage.getIconHeight());
+            dialog.setLocationRelativeTo(null);
+            //dialog.setVisible(true);
+            dialog.addKeyListener(new KeyAdapter() { // 添加键盘事件监听器，以便在用户按下 'P' 键时隐藏暂停菜单并继续游戏
+                @Override
+                public void keyPressed(KeyEvent e) {
+                    if (e.getKeyCode() == KeyEvent.VK_P) {
+                        isPaused = false;
+                        if (dialog != null) {
+                            dialog.dispose(); // 关闭暂停对话框
+                        }
+                        //cacherPauseMenu(); // 隐藏暂停菜单并继续游戏
+                    }
+
+
+                }
+            });
+        }
+        dialog.setVisible(true);
     }
 
     private void placerLesComposantsGraphiques() {
@@ -116,8 +153,6 @@ public class VueControleur extends JFrame implements Observer {
      */
     private void mettreAJourAffichage() {
 
-
-
         for (int x = 0; x < sizeX; x++) {
             for (int y = 0; y < sizeY; y++) {
 
@@ -127,7 +162,7 @@ public class VueControleur extends JFrame implements Observer {
 
                     Entite e = c.getEntite();
 
-                    if (e!= null) {
+                    if (e != null) {
                         if (c.getEntite() instanceof Heros) {
                             tabJLabel[x][y].setIcon(icoHero);
                         } else if (c.getEntite() instanceof Bloc) {
@@ -137,15 +172,14 @@ public class VueControleur extends JFrame implements Observer {
                         if (jeu.getGrille()[x][y] instanceof Mur) {
                             tabJLabel[x][y].setIcon(icoMur);
                         } else if (jeu.getGrille()[x][y] instanceof Vide) {
-
                             tabJLabel[x][y].setIcon(icoVide);
+                        } else if (jeu.getGrille()[x][y] instanceof Ice) {
+                            // 设置 Ice 实体的图标
+                            tabJLabel[x][y].setIcon(icoIce);
                         }
+
                     }
-
-
-
                 }
-
             }
         }
     }

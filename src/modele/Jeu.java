@@ -9,19 +9,23 @@ package modele;
 import java.awt.Point;
 import java.util.HashMap;
 import java.util.Observable;
+import java.util.Random;
+import java.util.ArrayList;
 
 
 public class Jeu extends Observable {
 
+    //初始化游戏界面大小init
     public static final int SIZE_X = 20;
     public static final int SIZE_Y = 10;
 
-
-
+    //Create Hero
     private Heros heros;
 
-    private HashMap<Case, Point> map = new  HashMap<Case, Point>(); // permet de récupérer la position d'une case à partir de sa référence
-    private Case[][] grilleEntites = new Case[SIZE_X][SIZE_Y]; // permet de récupérer une case à partir de ses coordonnées
+    // permet de récupérer la position d'une case à partir de sa référence
+    private HashMap<Case, Point> map = new  HashMap<Case, Point>();
+    // permet de récupérer une case à partir de ses coordonnées
+    private Case[][] grilleEntites = new Case[SIZE_X][SIZE_Y];
 
 
 
@@ -48,9 +52,6 @@ public class Jeu extends Observable {
     
     private void initialisationNiveau() {
 
-
-
-
         // murs extérieurs horizontaux
         for (int x = 0; x < 20; x++) {
             addCase(new Mur(this), x, 0);
@@ -70,6 +71,19 @@ public class Jeu extends Observable {
 
         }
 
+        Random random = new Random();
+        for (int i = 0; i < 20; i++) { // Add as many obstacles as necessary
+            int x, y;
+            do {
+                x = random.nextInt(18) + 1; // Generate a random position between 1 and 18
+                y = random.nextInt(8) + 1; // Generate a random position between 1 and 8
+            } while ((x == 4 && y == 4) || (x == 6 && y == 6));
+            System.out.println("Generated obstacle at: (" + x + ", " + y + ")");
+            addCase(new Mur(this), x, y);
+        }
+
+        //addCase(new Ice(this), 10, 3);
+        placeIceBlocks();
         heros = new Heros(this, grilleEntites[4][4]);
         Bloc b = new Bloc(this, grilleEntites[6][6]);
     }
@@ -78,9 +92,35 @@ public class Jeu extends Observable {
         grilleEntites[x][y] = e;
         map.put(e, new Point(x, y));
     }
-    
 
-    
+    private void placeIceBlocks() {
+        Random random = new Random();
+        ArrayList<Point> murCoordinates = new ArrayList<>(); // 存储已生成墙壁的坐标
+
+        // 将已生成的墙壁坐标添加到列表中
+        for (int x = 0; x < SIZE_X; x++) {
+            for (int y = 0; y < SIZE_Y; y++) {
+                if (grilleEntites[x][y] instanceof Mur) {
+                    murCoordinates.add(new Point(x, y));
+                }
+            }
+        }
+
+        int numIceBlocks = 5; // 需要生成的Ice数量
+        for (int i = 0; i < numIceBlocks; i++) {
+            // 生成随机坐标
+            int x, y;
+            do {
+                x = random.nextInt(SIZE_X - 2) + 1; // 生成1到SIZE_X-2之间的随机数
+                y = random.nextInt(SIZE_Y - 2) + 1; // 生成1到SIZE_Y-2之间的随机数
+            } while (murCoordinates.contains(new Point(x, y))); // 如果生成的坐标已经是墙壁的坐标，则重新生成
+
+            // 在游戏中添加Ice实体
+            addCase(new Ice(this), x, y);
+        }
+    }
+
+
     /** Si le déplacement de l'entité est autorisé (pas de mur ou autre entité), il est réalisé
      * Sinon, rien n'est fait.
      */
@@ -136,7 +176,7 @@ public class Jeu extends Observable {
         return p.x >= 0 && p.x < SIZE_X && p.y >= 0 && p.y < SIZE_Y;
     }
     
-    private Case caseALaPosition(Point p) {
+    public Case caseALaPosition(Point p) {
         Case retour = null;
         
         if (contenuDansGrille(p)) {

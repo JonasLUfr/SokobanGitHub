@@ -40,7 +40,13 @@ public abstract class Case extends Obj {
     public void setEntite(Entite _e) {
 
         e = _e;
-        e.setCase(this);}
+        e.setCase(this);
+    }
 
-
+    /*
+    // Return the Jeu object associated with this case
+    public Jeu getJeu() {
+        return jeu;
+    }
+    */
    }
