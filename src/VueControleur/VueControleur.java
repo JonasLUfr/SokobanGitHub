@@ -12,7 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import java.awt.Window; //pour le parcourir les windows
+import java.awt.Image;
 
 
 import modele.*;
@@ -37,7 +37,11 @@ public class VueControleur extends JFrame implements Observer {
     private boolean isPaused; // Pour Indiquer l'etat courant
     private ImageIcon pauseImage; // Image Pause
     private JLabel[][] tabJLabel; // cases graphique (au moment du rafraichissement, chaque case va être associée à une icône, suivant ce qui est présent dans le modèle)
-    private JDialog dialog; // 存储暂停对话框的引用
+    private JDialog dialog; // Enregistre une référence au dialogue de pause.
+
+    // Créer une instance du dialogue et spécifier sa taille
+    int dialogWidth = 400;
+    int dialogHeight = 250;
 
     public VueControleur(Jeu _jeu) {
         sizeX = jeu.SIZE_X;
@@ -86,7 +90,7 @@ public class VueControleur extends JFrame implements Observer {
         icoMur = chargerIcone("Images/Mur.png");
         icoBloc = chargerIcone("Images/Colonne.png");
         icoIce = chargerIcone("Images/Fantome.png"); //temp
-        pauseImage =chargerIcone("Images/Pause.jpg"); //pauseImage
+        pauseImage =chargerIcone("Images/Pause.png"); //pauseImage
     }
 
     private ImageIcon chargerIcone(String urlIcone) {
@@ -106,8 +110,18 @@ public class VueControleur extends JFrame implements Observer {
     private void afficherPauseMenu() {
         if (dialog == null) {
             dialog = new JDialog(this, "Pause", true);
-            dialog.getContentPane().add(new JLabel(pauseImage));
-            dialog.setSize(pauseImage.getIconWidth(), pauseImage.getIconHeight());
+            //dialog.getContentPane().add(new JLabel(pauseImage));
+            //注意这里为了优化Pause的图片显示，使得图片跟随窗口大小改变而改变，如果仅使用上一条，若窗口大小小于原图片尺寸，则会出现图片的剪裁！
+            // 缩放图像以适应对话框大小
+            Image scaledImage = pauseImage.getImage().getScaledInstance(dialogWidth, dialogHeight, Image.SCALE_SMOOTH);
+            // 创建缩放后的图像图标
+            ImageIcon scaledIcon = new ImageIcon(scaledImage);
+            // 创建显示图像的标签
+            JLabel label = new JLabel(scaledIcon);
+            // 将标签添加到对话框的内容面板中
+            dialog.getContentPane().add(label);
+
+            dialog.setSize(dialogWidth, dialogHeight);
             dialog.setLocationRelativeTo(null);
             //dialog.setVisible(true);
             dialog.addKeyListener(new KeyAdapter() { // 添加键盘事件监听器，以便在用户按下 'P' 键时隐藏暂停菜单并继续游戏
