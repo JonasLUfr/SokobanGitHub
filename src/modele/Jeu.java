@@ -21,9 +21,10 @@ public class Jeu extends Observable {
 
     //Create Hero
     private Heros heros;
+    private Bloc bloc;
 
     // permet de récupérer la position d'une case à partir de sa référence
-    private HashMap<Case, Point> map = new  HashMap<Case, Point>();
+    public HashMap<Case, Point> map = new  HashMap<Case, Point>();
     // permet de récupérer une case à partir de ses coordonnées
     private Case[][] grilleEntites = new Case[SIZE_X][SIZE_Y];
 
@@ -41,6 +42,9 @@ public class Jeu extends Observable {
     
     public Heros getHeros() {
         return heros;
+    }
+    public Bloc getBloc() {
+        return bloc;
     }
 
     public void deplacerHeros(Direction d) {
@@ -85,7 +89,7 @@ public class Jeu extends Observable {
         //addCase(new Ice(this), 10, 3);
         placeIceBlocks();
         heros = new Heros(this, grilleEntites[4][4]);
-        Bloc b = new Bloc(this, grilleEntites[6][6]);
+        bloc = new Bloc(this, grilleEntites[6][6]);
     }
 
     private void addCase(Case e, int x, int y) {
@@ -130,6 +134,17 @@ public class Jeu extends Observable {
         Point pCourant = map.get(e.getCase());
         
         Point pCible = calculerPointCible(pCourant, d);
+        // 保存当前位置为上一个位置
+        if (e instanceof Heros) {
+            ((Heros) e).setPointPre(pCourant);
+            System.out.println("Save pCourant Hero at: " + pCourant);
+        }
+
+        if (e instanceof Bloc) {
+            ((Bloc) e).setPointPre(pCourant);
+            ((Bloc) e).setPpreDirection(d);  //注意此时方向是正常的方向，需要再Bloc里将方向变反从而实现Undo返回
+            System.out.println("Save pCourant Bloc at: " + pCourant);
+        }
 
         if (contenuDansGrille(pCible)) {
             Entite eCible = caseALaPosition(pCible).getEntite();
@@ -142,6 +157,17 @@ public class Jeu extends Observable {
                 e.getCase().quitterLaCase();
                 caseALaPosition(pCible).entrerSurLaCase(e);
 
+                // Vérifier si la position cible est Ice---Partie Modifier
+                if (caseALaPosition(pCible) instanceof Ice) {
+                    // Déplacez le Bloc ou Hero d'une case supplémentaire dans la même direction.
+                    Point pNext = calculerPointCible(pCible, d);
+                    if (contenuDansGrille(pNext) && caseALaPosition(pNext).peutEtreParcouru()) {
+                        retour = deplacerEntite(e, d);
+                        // 将当前位置保存为上一个位置
+                    } else {
+                        retour = false; // Cannot move the Bloc one more square
+                    }
+                }
             } else {
                 retour = false;
             }
