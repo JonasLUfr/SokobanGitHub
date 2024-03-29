@@ -63,7 +63,7 @@ public class VueControleur extends JFrame implements Observer {
 
         mettreAJourAffichage();
 
-        // 请求焦点
+        // Demande de focus du jeu
         this.requestFocusInWindow();
 
     }
@@ -89,12 +89,25 @@ public class VueControleur extends JFrame implements Observer {
                         case KeyEvent.VK_UP: InversDirection = Direction.bas; jeu.deplacerHeros(Direction.haut); break;
                         case KeyEvent.VK_R: retournerHero(InversDirection);  break;// 按下 R 键时返回英雄到上一个位置
                         case KeyEvent.VK_Q: System.exit(0);  break; //Quand on appuie le Q sur clavier
+                        case KeyEvent.VK_S: int choix = JOptionPane.showConfirmDialog(null, "Vous êtes sûr de redémarrer le jeu ?", "Redémarrer", JOptionPane.YES_NO_OPTION);
+                            if (choix == JOptionPane.YES_OPTION) {
+                            // Si Yes:
+                            redemarrerJeu();
+                            }
                     }
                 }
             }
         });
     }
-
+    private void redemarrerJeu() {
+        // Logique de redémarrage du jeu
+        jeu.deleteObserver(this); // Supprimer l'observateur du jeu en cours
+        //Recréer l'objet du jeu et rafraîchir l'interface utilisateur.
+        retournerCount = 0;
+        jeu = new Jeu(); // Recréer l'objet du jeu
+        jeu.addObserver(this); // Recréer l'observateur
+        mettreAJourAffichage();
+    }
     public void incrementerRetournerCount() {// 这样做是为了显示retournerCount在菜单中！提升为全局变量
         retournerCount++;
     }
@@ -196,8 +209,8 @@ public class VueControleur extends JFrame implements Observer {
         // Créer un panneau de texte et ajouter du texte
         JPanel textPanel = new JPanel();
         JPanel textPanel2 = new JPanel();
-        JLabel textLabel = new JLabel("Appuyez p:pause | q:quitter | r:Undo(5Max)");
-        JLabel textLabel2 = new JLabel("Object: To the Final Point.");
+        JLabel textLabel = new JLabel("Appuyez P:pause | Q:quitter | S:redemarrer | R:undo(5Max)");
+        JLabel textLabel2 = new JLabel("Object: Reach the Final Point.");
         textPanel.add(textLabel);
         textPanel2.add(textLabel2);
 

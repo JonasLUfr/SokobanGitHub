@@ -37,14 +37,15 @@ public class Bloc extends Entite {
     //Pour Undo Bloc
     public void retourner() {
         // 获取当前位置的坐标
-        Point caseCouranteCoord = jeu.map.get(this.getCase());
+        //Point caseCouranteCoord = jeu.map.get(this.getCase());
         // 获取上一个位置的 Case 对象
         Case casePrecedente = jeu.caseALaPosition(this.ppreCible);
         if (casePrecedente != null) {
             // 将当前位置的Bloc对象移动到上一个位置
             jeu.deplacerEntite(this, ppreDirection);
             // 更新上一个位置的坐标为当前位置
-            setPointPre(caseCouranteCoord);
+            //setPointPre(caseCouranteCoord);
+            setPointPre(ppreCible);
         }
     }
 }

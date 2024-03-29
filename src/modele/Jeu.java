@@ -76,7 +76,7 @@ public class Jeu extends Observable {
         }
 
         Random random = new Random();
-        for (int i = 0; i < 20; i++) { // Add as many obstacles as necessary
+        for (int i = 0; i < 25; i++) { // Add as many obstacles as necessary
             int x, y;
             do {
                 x = random.nextInt(18) + 1; // Generate a random position between 1 and 18
@@ -110,7 +110,7 @@ public class Jeu extends Observable {
             }
         }
 
-        int numIceBlocks = 5; // 需要生成的Ice数量
+        int numIceBlocks = 8; // 需要生成的Ice数量
         for (int i = 0; i < numIceBlocks; i++) {
             // 生成随机坐标
             int x, y;
