@@ -41,6 +41,7 @@ public class VueControleur extends JFrame implements Observer {
     private ImageIcon icoPorte; // la sortie
 
     private ImageIcon icoCoin; // Coin
+    private ImageIcon icoGhost; //fantome
     private boolean isPaused; // Pour Indiquer l'etat courant
     private ImageIcon pauseImage; // Image Pause
     private JLabel[][] tabJLabel; // cases graphique (au moment du rafraichissement, chaque case va être associée à une icône, suivant ce qui est présent dans le modèle)
@@ -145,6 +146,7 @@ public class VueControleur extends JFrame implements Observer {
         pauseImage =chargerPause("Images/Pause.png"); //pauseImage
         icoPorte =  chargerIcone("Images/Porte.png");
         icoCoin =  chargerIcone("Images/Coin.png");
+        icoGhost =  chargerIcone("Images/Fantome.png");
 
     }
 
@@ -266,6 +268,8 @@ public class VueControleur extends JFrame implements Observer {
                             tabJLabel[x][y].setIcon(icoHero);
                         } else if (c.getEntite() instanceof Bloc) {
                             tabJLabel[x][y].setIcon(icoBloc);
+                        } else if (c.getEntite() instanceof Ghost) {
+                            tabJLabel[x][y].setIcon(icoGhost);  //charger Ghost
                         }
                     } else {
                         if (jeu.getGrille()[x][y] instanceof Mur) {
@@ -293,6 +297,12 @@ public class VueControleur extends JFrame implements Observer {
     @Override
     public void update(Observable o, Object arg) {
         //mettreAJourAffichage();
+        //jeu.moveGhost(jeu.getGhost());
+
+        // Appelez la méthode moveGhost dans le jeu.java sur chaque fantôme pour les déplacer dans chaque update.
+        for (Ghost ghost : jeu.getGhosts()) {
+            jeu.moveGhost(ghost);
+        }
 
         // récupérer le processus graphique pour rafraichir
         // (normalement, à l'inverse, a l'appel du modèle depuis le contrôleur, utiliser un autre processus, voir classe Executor)

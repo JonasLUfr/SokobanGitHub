@@ -33,6 +33,7 @@ public class Jeu extends Observable {
     private Porte porte;
 
     private Coin coin;
+    private Ghost ghost;
 
 
     // permet de récupérer la position d'une case à partir de sa référence
@@ -41,9 +42,16 @@ public class Jeu extends Observable {
     private Case[][] grilleEntites = new Case[SIZE_X][SIZE_Y];
 
     private ArrayList<Point> coinPositions = new ArrayList<>();
+    private ArrayList<Point> ghostPositions = new ArrayList<>();
 
 
-
+    private void initGhostPositions() { //存储每个幽灵对象的位置
+        ghostPositions = new ArrayList<>();
+        for (Ghost ghost : getGhosts()) {
+            Point position = map.get(ghost.getCase());
+            ghostPositions.add(position);
+        }
+    }
 
 
     public Jeu() {
@@ -59,17 +67,31 @@ public class Jeu extends Observable {
     public Bloc getBloc() {
         return bloc;
     }
+    //public Ghost getGhost() { return ghost; }
 
+    //遍历游戏的网格，检查每个位置上的实体是否是 Ghost 对象，并将它们添加到一个列表中
+    public ArrayList<Ghost> getGhosts() {
+        ArrayList<Ghost> ghosts = new ArrayList<>();
+        for (int x = 0; x < SIZE_X; x++) {
+            for (int y = 0; y < SIZE_Y; y++) {
+                if (grilleEntites[x][y].getEntite() instanceof Ghost) {
+                    ghosts.add((Ghost) grilleEntites[x][y].getEntite());
+                }
+            }
+        }
+        return ghosts;
+    }
     public void deplacerHeros(Direction d) {
         Point heroPosition = map.get(heros.getCase());
-        //if (heroPosition != null) { // 检查英雄的当前位置是否为null
+        if (heroPosition != null) { // 检查英雄的当前位置是否为null
             heros.avancerDirectionChoisie(d);
             checkAndRemoveCoin();
+            //checkPositionGhost();
             setChanged();
             notifyObservers();
-        //} else {
-         ///   System.err.println("Error: Hero position is null.");
-        //}
+        } else {
+            System.err.println("Error: Hero position is null.");
+        }
     }
 
 
@@ -122,6 +144,10 @@ public class Jeu extends Observable {
         placeIceBlocks();
         heros = new Heros(this, grilleEntites[4][4]);
         bloc = new Bloc(this, grilleEntites[6][6]);
+        ghost = new Ghost(this, grilleEntites[11][8]);
+        ghost = new Ghost(this, grilleEntites[15][8]);
+        ghost = new Ghost(this, grilleEntites[11][4]);
+        ghost = new Ghost(this, grilleEntites[15][4]);
         // 将门放置在右下角
         // mettre la porte au bon endroit
         porte = new Porte(this);
@@ -142,6 +168,7 @@ public class Jeu extends Observable {
         grilleEntites[x][y] = e;
         map.put(e, new Point(x, y));
     }
+
     public void checkAndRemoveCoin() {
         Point heroPosition = map.get(heros.getCase());
 
@@ -156,8 +183,6 @@ public class Jeu extends Observable {
             }
         }
     }
-
-
 
     private void placeIceBlocks() {
         Random random = new Random();
@@ -199,6 +224,12 @@ public class Jeu extends Observable {
         Victoire victoireDialog = new Victoire(null);
         victoireDialog.setVisible(true);
     }
+
+    private void afficherEchouer() {
+        // 创建并显示胜利对话框
+        Echouer EchouerDialog = new Echouer(null);
+        EchouerDialog.setVisible(true);
+    }
     public boolean deplacerEntite(Entite e, Direction d) {
         boolean retour = true;
         Point pCourant = map.get(e.getCase());
@@ -223,10 +254,19 @@ public class Jeu extends Observable {
                 eCible.pousser(d);
             }
 
+            // Si la case cible est occupée par un Ghost et que l'entité est un Heros, afficher l'échec
+            if (e instanceof Heros && eCible instanceof Ghost) {
+                afficherEchouer();
+                System.out.println("NO! CEST GHOST!!");
+                return false; // Retourner false pour indiquer que le déplacement n'est pas autorisé
+            }
+
             // si la case est libérée
             if (caseALaPosition(pCible).peutEtreParcouru()) {
                 e.getCase().quitterLaCase();
                 caseALaPosition(pCible).entrerSurLaCase(e);
+                //caseALaPosition(pCible).getEntite().allerSurCase(e);
+
 
                 // Vérifier si la position cible est une porte
                 if (e instanceof Bloc && caseALaPosition(pCible) instanceof Porte) {
@@ -234,6 +274,7 @@ public class Jeu extends Observable {
                     System.out.println("Congratulations! You have won the game!");
                     afficherVictoire();
                 }
+
 
                 // Vérifier si la position cible est Ice---Partie Modifier
                 if (caseALaPosition(pCible) instanceof Ice) {
@@ -256,8 +297,33 @@ public class Jeu extends Observable {
 
         return retour;
     }
-    
-    
+
+    public void moveGhost(Entite e) {
+        // 获取Ghost的当前位置
+        Point currentPos = map.get(e.getCase());
+
+        // 获取Ghost可以移动的方向
+        ArrayList<Direction> possibleDirections = new ArrayList<>();
+        for (Direction direction : Direction.values()) {
+            Point nextPos = calculerPointCible(currentPos, direction);
+            if (contenuDansGrille(nextPos)) {
+                Case nextCase = caseALaPosition(nextPos);
+                if (nextCase.peutEtreParcouru() && !(nextCase instanceof Porte)) {
+                    possibleDirections.add(direction);
+                }
+            }
+        }
+
+        // 如果有可行的方向，则随机选择一个方向移动Ghost
+        if (!possibleDirections.isEmpty()) {
+            Random random = new Random();
+            int randomIndex = random.nextInt(possibleDirections.size());
+            Direction randomDirection = possibleDirections.get(randomIndex);
+            deplacerEntite(e, randomDirection);
+        }
+    }
+
+
     private Point calculerPointCible(Point pCourant, Direction d) {
         Point pCible = null;
         
