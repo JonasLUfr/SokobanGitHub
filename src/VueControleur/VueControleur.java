@@ -16,7 +16,7 @@ import java.awt.Image;
 import java.awt.BorderLayout;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-
+import java.awt.FlowLayout;
 
 import modele.*;
 
@@ -37,6 +37,10 @@ public class VueControleur extends JFrame implements Observer {
     private ImageIcon icoMur;
     private ImageIcon icoBloc;
     private ImageIcon icoIce;  //ajouter Ice
+
+    private ImageIcon icoPorte; // la sortie
+
+    private ImageIcon icoCoin; // Coin
     private boolean isPaused; // Pour Indiquer l'etat courant
     private ImageIcon pauseImage; // Image Pause
     private JLabel[][] tabJLabel; // cases graphique (au moment du rafraichissement, chaque case va être associée à une icône, suivant ce qui est présent dans le modèle)
@@ -45,8 +49,8 @@ public class VueControleur extends JFrame implements Observer {
     private int retournerCount = 0;; // Compteur de retournner()
 
     // Créer une instance du dialogue et spécifier sa taille
-    int dialogWidth = 400;
-    int dialogHeight = 250;
+    int dialogWidth = 549;
+    int dialogHeight = 541;
 
     public VueControleur(Jeu _jeu) {
         sizeX = jeu.SIZE_X;
@@ -87,7 +91,7 @@ public class VueControleur extends JFrame implements Observer {
                         case KeyEvent.VK_RIGHT: InversDirection = Direction.gauche; jeu.deplacerHeros(Direction.droite); break;
                         case KeyEvent.VK_DOWN: InversDirection = Direction.haut; jeu.deplacerHeros(Direction.bas); break;
                         case KeyEvent.VK_UP: InversDirection = Direction.bas; jeu.deplacerHeros(Direction.haut); break;
-                        case KeyEvent.VK_R: retournerHero(InversDirection);  break;// 按下 R 键时返回英雄到上一个位置
+                        case KeyEvent.VK_R: retournerHero(InversDirection);  break;// Ramène le héros à la position précédente lorsque la touche R est enfoncée.
                         case KeyEvent.VK_Q: System.exit(0);  break; //Quand on appuie le Q sur clavier
                         case KeyEvent.VK_S: int choix = JOptionPane.showConfirmDialog(null, "Vous êtes sûr de redémarrer le jeu ?", "Redémarrer", JOptionPane.YES_NO_OPTION);
                             if (choix == JOptionPane.YES_OPTION) {
@@ -116,20 +120,20 @@ public class VueControleur extends JFrame implements Observer {
         retournerCount--;
     }
      */
-    //Undo hero et bloc Max 5 fois
+    //Undo hero avec bloc Max 5 fois
     public void retournerHero(Direction d) {
-        if (retournerCount < 5) { // 返回函数检查计数器的值是否小于5
+        if (retournerCount < 5) { // vérifie si la valeur du compteur est inférieure à 5.
             Heros hero = jeu.getHeros();
-            Bloc bloc = jeu.getBloc(); // 获取方块对象
+            Bloc bloc = jeu.getBloc(); // Obtenir l'objet bloc
             if (hero != null) {
-                hero.retourner(d); // 返回英雄到上一个位置，方法一
-                bloc.retourner(); // 返回方块到上一个位置，方法二
+                hero.retourner(d); // Retour du héros à la position précédente, méthode 1
+                bloc.retourner(); // Retour du bloc à la position précédente, méthode 2
                 incrementerRetournerCount();
-                //retournerCount++; // 增加计数器的值
+                //retournerCount++; // incre
             }
-            mettreAJourAffichage(); // 更新图形界面
+            mettreAJourAffichage(); // UpdateUI
         } else {
-            System.out.println("retournerHero已经执行了5次返回操作。"); // 或者采取其他你认为合适的措施
+            System.out.println("retournerHero Undo deja 5 fois。"); // printout
         }
     }
     private void chargerLesIcones() {
@@ -138,7 +142,10 @@ public class VueControleur extends JFrame implements Observer {
         icoMur = chargerIcone("Images/Mur.png");
         icoBloc = chargerIcone("Images/Colonne.png");
         icoIce = chargerIcone("Images/Ice.png"); //Ice 18*19
-        pauseImage =chargerIcone("Images/Pause.png"); //pauseImage
+        pauseImage =chargerPause("Images/Pause.png"); //pauseImage
+        icoPorte =  chargerIcone("Images/Porte.png");
+        icoCoin =  chargerIcone("Images/Coin.png");
+
     }
 
     private ImageIcon chargerIcone(String urlIcone) {
@@ -146,41 +153,55 @@ public class VueControleur extends JFrame implements Observer {
 
         try {
             image = ImageIO.read(new File(urlIcone));
+            Image resizedImage = image.getScaledInstance(18, 18, Image.SCALE_SMOOTH);
+            //mettre toutes les images de la forme concrete 18*18 pour eviter les problemes de la forme
+
+            return new ImageIcon(resizedImage);
         } catch (IOException ex) {
             Logger.getLogger(VueControleur.class.getName()).log(Level.SEVERE, null, ex);
             return null;
         }
 
-        return new ImageIcon(image);
+        ///return new ImageIcon(image);
+    }
+    private ImageIcon chargerPause(String urlIcone) {
+        BufferedImage image = null;
+        try {
+            image = ImageIO.read(new File(urlIcone));
+
+            return new ImageIcon(image);
+        } catch (IOException ex) {
+            Logger.getLogger(VueControleur.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
+        }
     }
 
     // Créer une boîte de dialogue pour afficher l'image de pause
     private void afficherPauseMenu() {
         if (dialog == null) {
             dialog = new JDialog(this, "Pause", true);
-            //dialog.getContentPane().add(new JLabel(pauseImage));
             //注意这里为了优化Pause的图片显示，使得图片跟随窗口大小改变而改变，如果仅使用上一条，若窗口大小小于原图片尺寸，则会出现图片的剪裁！
-            // 缩放图像以适应对话框大小
+            //Adapter l'image à la taille de la boîte de dialogue “Image.SCALE_SMOOTH”
             Image scaledImage = pauseImage.getImage().getScaledInstance(dialogWidth, dialogHeight, Image.SCALE_SMOOTH);
-            // 创建缩放后的图像图标
+            // Création d'icônes à échelle réduite “创建缩放后的图像图标”
             ImageIcon scaledIcon = new ImageIcon(scaledImage);
-            // 创建显示图像的标签
+            // Création d'étiquettes pour l'affichage des images
             JLabel label = new JLabel(scaledIcon);
-            // 将标签添加到对话框的内容面板中
+            // Ajout d'étiquettes au panneau de contenu d'une boîte de dialogue
             dialog.getContentPane().add(label);
 
             dialog.setSize(dialogWidth, dialogHeight);
             dialog.setLocationRelativeTo(null);
             //dialog.setVisible(true);
-            dialog.addKeyListener(new KeyAdapter() { // 添加键盘事件监听器，以便在用户按下 'P' 键时隐藏暂停菜单并继续游戏
+            dialog.addKeyListener(new KeyAdapter() {
+                // Ajoutez un contrôleur d'événements clavier pour masquer le menu de pause et poursuivre le jeu lorsque l'utilisateur appuie sur la touche 'P'.
                 @Override
                 public void keyPressed(KeyEvent e) {
                     if (e.getKeyCode() == KeyEvent.VK_P) {
                         isPaused = false;
                         if (dialog != null) {
-                            dialog.dispose(); // 关闭暂停对话框
+                            dialog.dispose(); // fermer le
                         }
-                        //cacherPauseMenu(); // 隐藏暂停菜单并继续游戏
                     }
 
 
@@ -214,13 +235,14 @@ public class VueControleur extends JFrame implements Observer {
         textPanel.add(textLabel);
         textPanel2.add(textLabel2);
 
-        // 创建一个包含游戏面板和文本面板的整体面板
+        // Créer un panneau entier contenant le panneau de jeu et le panneau de texte
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.add(gamePanel, BorderLayout.CENTER);
         mainPanel.add(textPanel, BorderLayout.NORTH);
         mainPanel.add(textPanel2, BorderLayout.SOUTH);
 
-        // 将整体面板添加到对话框中
+
+        // Ajout ce panneau intégral à une boîte
         add(mainPanel);
     }
 
@@ -228,8 +250,8 @@ public class VueControleur extends JFrame implements Observer {
     /**
      * Il y a une grille du côté du modèle ( jeu.getGrille() ) et une grille du côté de la vue (tabJLabel)
      */
-    private void mettreAJourAffichage() {
 
+    private void mettreAJourAffichage() {
         for (int x = 0; x < sizeX; x++) {
             for (int y = 0; y < sizeY; y++) {
 
@@ -251,14 +273,21 @@ public class VueControleur extends JFrame implements Observer {
                         } else if (jeu.getGrille()[x][y] instanceof Vide) {
                             tabJLabel[x][y].setIcon(icoVide);
                         } else if (jeu.getGrille()[x][y] instanceof Ice) {
-                            // 设置 Ice 实体的图标
-                            tabJLabel[x][y].setIcon(icoIce);
+                            tabJLabel[x][y].setIcon(icoIce); // Définir l'icône de l'entité Ice
+                        } else if (jeu.getGrille()[x][y] instanceof Porte) {
+                            tabJLabel[x][y].setIcon(icoPorte); // Définir l'icône de l'entité porte
+                        } else if (jeu.getGrille()[x][y] instanceof Coin) {
+                            tabJLabel[x][y].setIcon(icoCoin); // Définir l'icône de l'entité coin
                         }
 
                     }
                 }
             }
         }
+
+        // centrer le boit dialog
+        pack();
+        setLocationRelativeTo(null);
     }
 
     @Override
@@ -277,3 +306,5 @@ public class VueControleur extends JFrame implements Observer {
 
     }
 }
+
+

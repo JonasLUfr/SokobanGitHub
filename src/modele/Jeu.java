@@ -6,11 +6,16 @@
 package modele;
 
 
+import VueControleur.VueControleur;
+
 import java.awt.Point;
 import java.util.HashMap;
 import java.util.Observable;
 import java.util.Random;
 import java.util.ArrayList;
+import modele.StartMenuView;
+
+
 
 
 public class Jeu extends Observable {
@@ -19,23 +24,31 @@ public class Jeu extends Observable {
     public static final int SIZE_X = 20;
     public static final int SIZE_Y = 10;
 
+
+
     //Create Hero
     private Heros heros;
     private Bloc bloc;
+
+    private Porte porte;
+
+    private Coin coin;
+
 
     // permet de récupérer la position d'une case à partir de sa référence
     public HashMap<Case, Point> map = new  HashMap<Case, Point>();
     // permet de récupérer une case à partir de ses coordonnées
     private Case[][] grilleEntites = new Case[SIZE_X][SIZE_Y];
 
+    private ArrayList<Point> coinPositions = new ArrayList<>();
+
+
+
 
 
     public Jeu() {
         initialisationNiveau();
     }
-
-
-    
     public Case[][] getGrille() {
         return grilleEntites;
     }
@@ -48,12 +61,18 @@ public class Jeu extends Observable {
     }
 
     public void deplacerHeros(Direction d) {
-        heros.avancerDirectionChoisie(d);
-        setChanged();
-        notifyObservers();
+        Point heroPosition = map.get(heros.getCase());
+        //if (heroPosition != null) { // 检查英雄的当前位置是否为null
+            heros.avancerDirectionChoisie(d);
+            checkAndRemoveCoin();
+            setChanged();
+            notifyObservers();
+        //} else {
+         ///   System.err.println("Error: Hero position is null.");
+        //}
     }
 
-    
+
     private void initialisationNiveau() {
 
         // murs extérieurs horizontaux
@@ -74,7 +93,7 @@ public class Jeu extends Observable {
             }
 
         }
-
+/*
         Random random = new Random();
         for (int i = 0; i < 25; i++) { // Add as many obstacles as necessary
             int x, y;
@@ -85,56 +104,108 @@ public class Jeu extends Observable {
             System.out.println("Generated obstacle at: (" + x + ", " + y + ")");
             addCase(new Mur(this), x, y);
         }
+*/
 
+        // Ajouter des obstacles aux positions fixes
+        addCase(new Mur(this), 2, 2);
+        addCase(new Mur(this), 8, 3);
+        addCase(new Mur(this), 14, 5);
+        addCase(new Mur(this), 10, 7);
+        addCase(new Mur(this), 5, 4);
+        addCase(new Mur(this), 12, 2);
+        addCase(new Mur(this), 18, 4);
+        addCase(new Mur(this), 3, 6);
+        addCase(new Mur(this), 17, 6);
+        addCase(new Mur(this), 15, 3);
+        addCase(new Mur(this), 15, 3);
         //addCase(new Ice(this), 10, 3);
         placeIceBlocks();
         heros = new Heros(this, grilleEntites[4][4]);
         bloc = new Bloc(this, grilleEntites[6][6]);
+        // 将门放置在右下角
+        // mettre la porte au bon endroit
+        porte = new Porte(this);
+        addCase(new Porte(this), SIZE_X - 2, SIZE_Y - 2);
+
+
+        addCoin(4, 2);
+        addCoin(13, 7);
+        addCoin(8, 8);
+        addCoin(18, 3);
+    }
+    private void addCoin(int x, int y) {
+        coinPositions.add(new Point(x, y));
+        addCase(new Coin(this), x, y);
     }
 
     private void addCase(Case e, int x, int y) {
         grilleEntites[x][y] = e;
         map.put(e, new Point(x, y));
     }
+    public void checkAndRemoveCoin() {
+        Point heroPosition = map.get(heros.getCase());
 
-    private void placeIceBlocks() {
-        Random random = new Random();
-        ArrayList<Point> murCoordinates = new ArrayList<>(); // 存储已生成墙壁的坐标
-
-        // 将已生成的墙壁坐标添加到列表中
-        for (int x = 0; x < SIZE_X; x++) {
-            for (int y = 0; y < SIZE_Y; y++) {
-                if (grilleEntites[x][y] instanceof Mur) {
-                    murCoordinates.add(new Point(x, y));
-                }
+        for (int i = 0; i < coinPositions.size(); i++) {
+            Point coinPosition = coinPositions.get(i);
+            if (heroPosition.equals(coinPosition)) {
+                // Si les positions du héros et de coin se chevauchent, retirez la pièce d'or.
+                coinPositions.remove(i);
+                //grilleEntites[coinPosition.x][coinPosition.y] = new Vide(this); //La position de coin à vide sur la carte est incorrecte et une erreur est signalée lorsque l'on revient à cette coordonnée.
+                addCase(new Vide(this), coinPosition.x, coinPosition.y); // Doit placer l'emplacement de coin sur la carte dans un nouveau cas vide.
+                break; // Une fois le coin trouvée et supprimée, quittez la boucle.
             }
-        }
-
-        int numIceBlocks = 8; // 需要生成的Ice数量
-        for (int i = 0; i < numIceBlocks; i++) {
-            // 生成随机坐标
-            int x, y;
-            do {
-                x = random.nextInt(SIZE_X - 2) + 1; // 生成1到SIZE_X-2之间的随机数
-                y = random.nextInt(SIZE_Y - 2) + 1; // 生成1到SIZE_Y-2之间的随机数
-            } while (murCoordinates.contains(new Point(x, y))); // 如果生成的坐标已经是墙壁的坐标，则重新生成
-
-            // 在游戏中添加Ice实体
-            addCase(new Ice(this), x, y);
         }
     }
 
 
-    /** Si le déplacement de l'entité est autorisé (pas de mur ou autre entité), il est réalisé
-     * Sinon, rien n'est fait.
-     */
+
+    private void placeIceBlocks() {
+        Random random = new Random();
+        ArrayList<Point> OccupeCoordinates = new ArrayList<>(); // Utilisé pour stocker les coordonnées des murs générés
+
+        // Ajout à la liste des coordonnées des murs déja générés
+        for (int x = 0; x < SIZE_X; x++) {
+            for (int y = 0; y < SIZE_Y; y++) {
+                if (grilleEntites[x][y] instanceof Mur) {
+                    OccupeCoordinates.add(new Point(x, y));
+                }
+            }
+        }
+
+        // Ajouter aussi les Coordinates de la porte à la liste
+        Point doorPosition = map.get(porte);
+        OccupeCoordinates.add(doorPosition);
+
+
+        for (Point coinPosition : coinPositions) {
+            OccupeCoordinates.add(coinPosition);
+        }
+
+        int numIceBlocks = 8; // Nombre de glaces à générer
+        for (int i = 0; i < numIceBlocks; i++) {
+            // Générer des coordonnées aléatoires
+            int x, y;
+            do {
+                x = random.nextInt(SIZE_X - 2) + 1; // Générer des nombres aléatoires entre 1 et SIZE_X-2
+                y = random.nextInt(SIZE_Y - 2) + 1; // Générer des nombres aléatoires entre 1 et SIZE_Y-2
+            } while (OccupeCoordinates.contains(new Point(x, y))); // Si les coordonnées générées sont déjà les coordonnées du mur, régénérer les.
+
+            // Ajout d'entités de glace au jeu
+            addCase(new Ice(this), x, y);
+        }
+    }
+    private void afficherVictoire() {
+        // 创建并显示胜利对话框
+        Victoire victoireDialog = new Victoire(null);
+        victoireDialog.setVisible(true);
+    }
     public boolean deplacerEntite(Entite e, Direction d) {
         boolean retour = true;
-        
         Point pCourant = map.get(e.getCase());
         
         Point pCible = calculerPointCible(pCourant, d);
-        // 保存当前位置为上一个位置
+
+        // Sauvegarder la position actuelle comme position précédente
         if (e instanceof Heros) {
             ((Heros) e).setPointPre(pCourant);
             System.out.println("Save pCourant Hero at: " + pCourant);
@@ -156,6 +227,13 @@ public class Jeu extends Observable {
             if (caseALaPosition(pCible).peutEtreParcouru()) {
                 e.getCase().quitterLaCase();
                 caseALaPosition(pCible).entrerSurLaCase(e);
+
+                // Vérifier si la position cible est une porte
+                if (e instanceof Bloc && caseALaPosition(pCible) instanceof Porte) {
+                    // La logique qui déclenche un gain de jeu
+                    System.out.println("Congratulations! You have won the game!");
+                    afficherVictoire();
+                }
 
                 // Vérifier si la position cible est Ice---Partie Modifier
                 if (caseALaPosition(pCible) instanceof Ice) {
@@ -213,3 +291,5 @@ public class Jeu extends Observable {
     }
 
 }
+
+

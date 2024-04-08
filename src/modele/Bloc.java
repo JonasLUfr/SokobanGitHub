@@ -11,6 +11,7 @@ public class Bloc extends Entite {
     }
     public void setPpreDirection(Direction d){
         // 保存方向信息时进行逆转！
+        //Inversé lorsque les informations sur la direction sont sauvegardées !
         switch (d) {
             case gauche:
                 this.ppreDirection = Direction.droite;
@@ -38,13 +39,12 @@ public class Bloc extends Entite {
     public void retourner() {
         // 获取当前位置的坐标
         //Point caseCouranteCoord = jeu.map.get(this.getCase());
-        // 获取上一个位置的 Case 对象
+        // Obtenir l'objet Case de la position précédente
         Case casePrecedente = jeu.caseALaPosition(this.ppreCible);
         if (casePrecedente != null) {
-            // 将当前位置的Bloc对象移动到上一个位置
+            // Déplacer l'objet Bloc à la position actuelle vers la position précédente
             jeu.deplacerEntite(this, ppreDirection);
-            // 更新上一个位置的坐标为当前位置
-            //setPointPre(caseCouranteCoord);
+            // Mise à jour des coordonnées de la position précédente à la position actuelle
             setPointPre(ppreCible);
         }
     }

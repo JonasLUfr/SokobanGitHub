@@ -10,12 +10,15 @@ public class StartMenuView extends JPanel {  //JPanel 是 Java Swing 中的一�
     private JButton startButton;
     private JButton quitButton;
     private JLabel titleLabel;
-    private Object lock = new Object(); // 用于线程同步的锁对象lock
+    private Object lock = new Object(); // Verrouillage de l'objet pour la synchronisation des threads lock
+
+    private Musique musique; // ajouter l'objet Musique
+
     public StartMenuView() {
         System.out.println("StartMenuView constructor called"); //debug
-        //使用 BorderLayout 设置面板的布局管理器，这将使组件在面板上按照边界布局进行排列。
+        //Utilisez BorderLayout pour configurer le gestionnaire de mise en page du panneau, ce qui aura pour effet de disposer les composants sur le panneau dans une mise en page de bordure.
         setLayout(new BorderLayout());
-        //创建游戏标题
+        //Création de titres de jeux
         titleLabel = new JLabel("PUSHCASE", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         add(titleLabel, BorderLayout.NORTH);
@@ -45,6 +48,11 @@ public class StartMenuView extends JPanel {  //JPanel 是 Java Swing 中的一�
         buttonPanel.add(quitButton);
 
         add(buttonPanel, BorderLayout.CENTER);
+
+        // 创建 Musique 对象并播放第一个背景音乐
+        musique = new Musique();
+        musique.playBackgroundMusic1();
+
     }
 
     private void startGame() {
@@ -57,6 +65,9 @@ public class StartMenuView extends JPanel {  //JPanel 是 Java Swing 中的一�
             VueControleur vc = new VueControleur(jeu);
              vc.setVisible(true);
          * */
+        ///停止播放第一个背景音乐，并播放第二个背景音乐
+
+        musique.playBackgroundMusic2();
         synchronized (lock) {
             lock.notifyAll(); // 通知等待的线程可以继续执行
         }
@@ -64,8 +75,6 @@ public class StartMenuView extends JPanel {  //JPanel 是 Java Swing 中的一�
     }
 
     private void quitGame() {
-        // 退出游戏
-        // 在这里添加代码来关闭应用程序
         System.out.println("Game stop!!");
         System.exit(0);
     }
@@ -73,11 +82,13 @@ public class StartMenuView extends JPanel {  //JPanel 是 Java Swing 中的一�
     public void waitForStart() {
         synchronized (lock) {
             try {
-                lock.wait(); // 等待开始按钮被点击
+                lock.wait(); // Attente d'un clic sur le bouton de démarrage！
             } catch (InterruptedException e) {
                 System.out.println("problem lock");
                 e.printStackTrace();
             }
         }
     }
+
+
 }

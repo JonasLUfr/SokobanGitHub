@@ -25,6 +25,6 @@ public class Ice extends Case {
     }
     //Push method to push the entity an extra square when it moves onto ice
     //not need @Override
-    //super调用父类的构造方法、成员变量或成员方法,但是case里没有这个push，所以无需继承
+    //super，Appel d'un constructeur, d'une variable membre ou d'une méthode membre d'une classe mère
 
 }

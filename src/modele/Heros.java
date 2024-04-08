@@ -21,17 +21,16 @@ public class Heros extends Entite
     public Heros(Jeu _jeu, Case c) {
         super(_jeu, c);
     }
-    // 返回英雄到上一个位置
-    // 返回英雄到上一个位置
+
     public void retourner(Direction d) {
         // 获取当前位置的坐标
         //Point caseCouranteCoord = jeu.map.get(this.getCase());
-        // 获取上一个位置的 Case 对象
+        // Obtenir l'objet Case de la position précédente
         Case casePrecedente = jeu.caseALaPosition(this.ppreCible);
         if (casePrecedente != null) {
-            // 将当前位置的英雄对象移动到上一个位置
+            // Déplacer l'objet Bloc à la position actuelle vers la position précédente
             jeu.deplacerEntite(this, d);
-            // 更新上一个位置的坐标为当前位置
+            //  Mise à jour des coordonnées de la position précédente à la position actuelle
             //setPointPre(caseCouranteCoord);
             setPointPre(ppreCible);
         }
