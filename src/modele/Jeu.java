@@ -167,8 +167,8 @@ public class Jeu extends Observable {
 
         addCoin(4, 2);
         addCoin(13, 7);
-        addCoin(8, 8);
-        addCoin(18, 3);
+        addCoin(8, 5);
+        addCoin(17, 3);
     }
     private void addCoin(int x, int y) {
         coinPositions.add(new Point(x, y));

@@ -138,15 +138,15 @@ public class VueControleur extends JFrame implements Observer {
         }
     }
     private void chargerLesIcones() {
-        icoHero = chargerIcone("Images/Pacman.png");
+        icoHero = chargerIcone("Images/Chara.png");
         icoVide = chargerIcone("Images/Vide.png");
-        icoMur = chargerIcone("Images/Mur.png");
+        icoMur = chargerIcone("Images/wall.jpg");
         icoBloc = chargerIcone("Images/Colonne.png");
         icoIce = chargerIcone("Images/Ice.png"); //Ice 18*19
         pauseImage =chargerPause("Images/Pause.png"); //pauseImage
         icoPorte =  chargerIcone("Images/Porte.png");
         icoCoin =  chargerIcone("Images/Coin.png");
-        icoGhost =  chargerIcone("Images/Fantome.png");
+        icoGhost =  chargerIcone("Images/ght.png");
 
     }
 
