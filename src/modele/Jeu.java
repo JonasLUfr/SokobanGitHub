@@ -17,10 +17,9 @@ import modele.StartMenuView;
 
 
 
-
 public class Jeu extends Observable {
 
-    //初始化游戏界面大小init
+    //init InterfaceG
     public static final int SIZE_X = 20;
     public static final int SIZE_Y = 10;
 
@@ -35,6 +34,8 @@ public class Jeu extends Observable {
     private Coin coin;
     private Ghost ghost;
 
+    private int coinsEaten;
+
 
     // permet de récupérer la position d'une case à partir de sa référence
     public HashMap<Case, Point> map = new  HashMap<Case, Point>();
@@ -44,8 +45,8 @@ public class Jeu extends Observable {
     private ArrayList<Point> coinPositions = new ArrayList<>();
     private ArrayList<Point> ghostPositions = new ArrayList<>();
 
-
-    private void initGhostPositions() { //存储每个幽灵对象的位置
+    //Stocke l'emplacement de chaque objet fantôme pour la suite Func possible(Futur)
+    private void initGhostPositions() {
         ghostPositions = new ArrayList<>();
         for (Ghost ghost : getGhosts()) {
             Point position = map.get(ghost.getCase());
@@ -53,9 +54,9 @@ public class Jeu extends Observable {
         }
     }
 
-
     public Jeu() {
         initialisationNiveau();
+        coinsEaten = 0;
     }
     public Case[][] getGrille() {
         return grilleEntites;
@@ -67,9 +68,18 @@ public class Jeu extends Observable {
     public Bloc getBloc() {
         return bloc;
     }
+
     //public Ghost getGhost() { return ghost; }
 
-    //遍历游戏的网格，检查每个位置上的实体是否是 Ghost 对象，并将它们添加到一个列表中
+    public void incrementCoinsEaten() {
+        coinsEaten++;
+    }
+
+    public int getCoinsEaten() {
+        return coinsEaten;
+    }
+
+    //Parcourir la grille du jeu, vérifier si les entités à chaque endroit sont des objets Ghost et les ajouter à une liste.
     public ArrayList<Ghost> getGhosts() {
         ArrayList<Ghost> ghosts = new ArrayList<>();
         for (int x = 0; x < SIZE_X; x++) {
@@ -83,7 +93,7 @@ public class Jeu extends Observable {
     }
     public void deplacerHeros(Direction d) {
         Point heroPosition = map.get(heros.getCase());
-        if (heroPosition != null) { // 检查英雄的当前位置是否为null
+        if (heroPosition != null) { // Vérifier si la position actuelle du héros est nulle
             heros.avancerDirectionChoisie(d);
             checkAndRemoveCoin();
             //checkPositionGhost();
@@ -144,11 +154,12 @@ public class Jeu extends Observable {
         placeIceBlocks();
         heros = new Heros(this, grilleEntites[4][4]);
         bloc = new Bloc(this, grilleEntites[6][6]);
+
         ghost = new Ghost(this, grilleEntites[11][8]);
         ghost = new Ghost(this, grilleEntites[15][8]);
         ghost = new Ghost(this, grilleEntites[11][4]);
         ghost = new Ghost(this, grilleEntites[15][4]);
-        // 将门放置在右下角
+
         // mettre la porte au bon endroit
         porte = new Porte(this);
         addCase(new Porte(this), SIZE_X - 2, SIZE_Y - 2);
@@ -179,6 +190,7 @@ public class Jeu extends Observable {
                 coinPositions.remove(i);
                 //grilleEntites[coinPosition.x][coinPosition.y] = new Vide(this); //La position de coin à vide sur la carte est incorrecte et une erreur est signalée lorsque l'on revient à cette coordonnée.
                 addCase(new Vide(this), coinPosition.x, coinPosition.y); // Doit placer l'emplacement de coin sur la carte dans un nouveau cas vide.
+                incrementCoinsEaten();
                 break; // Une fois le coin trouvée et supprimée, quittez la boucle.
             }
         }
@@ -201,7 +213,6 @@ public class Jeu extends Observable {
         Point doorPosition = map.get(porte);
         OccupeCoordinates.add(doorPosition);
 
-
         for (Point coinPosition : coinPositions) {
             OccupeCoordinates.add(coinPosition);
         }
@@ -219,14 +230,14 @@ public class Jeu extends Observable {
             addCase(new Ice(this), x, y);
         }
     }
-    private void afficherVictoire() {
-        // 创建并显示胜利对话框
-        Victoire victoireDialog = new Victoire(null);
+    private void afficherVictoire(int coinsEaten) {
+        // Création et affichage des dialogues de victoire
+        Victoire victoireDialog = new Victoire(null, coinsEaten);
         victoireDialog.setVisible(true);
     }
 
     private void afficherEchouer() {
-        // 创建并显示胜利对话框
+        // Création et affichage de dialogues d'échec
         Echouer EchouerDialog = new Echouer(null);
         EchouerDialog.setVisible(true);
     }
@@ -257,7 +268,7 @@ public class Jeu extends Observable {
             // Si la case cible est occupée par un Ghost et que l'entité est un Heros, afficher l'échec
             if (e instanceof Heros && eCible instanceof Ghost) {
                 afficherEchouer();
-                System.out.println("NO! CEST GHOST!!");
+                System.out.println("NO! CEST GHOST!!"); //Debug
                 return false; // Retourner false pour indiquer que le déplacement n'est pas autorisé
             }
 
@@ -271,10 +282,10 @@ public class Jeu extends Observable {
                 // Vérifier si la position cible est une porte
                 if (e instanceof Bloc && caseALaPosition(pCible) instanceof Porte) {
                     // La logique qui déclenche un gain de jeu
-                    System.out.println("Congratulations! You have won the game!");
-                    afficherVictoire();
+                    System.out.println("Congratulations! You have won the game!");  //Debug
+                    int coinsEaten = 4 - getCoinsEaten();
+                    afficherVictoire(coinsEaten);
                 }
-
 
                 // Vérifier si la position cible est Ice---Partie Modifier
                 if (caseALaPosition(pCible) instanceof Ice) {
@@ -299,22 +310,23 @@ public class Jeu extends Observable {
     }
 
     public void moveGhost(Entite e) {
-        // 获取Ghost的当前位置
+        // Obtenir la position actuelle de Ghost
         Point currentPos = map.get(e.getCase());
 
-        // 获取Ghost可以移动的方向
+        // Obtenir la direction dans laquelle Ghost peut se déplacer
         ArrayList<Direction> possibleDirections = new ArrayList<>();
         for (Direction direction : Direction.values()) {
             Point nextPos = calculerPointCible(currentPos, direction);
             if (contenuDansGrille(nextPos)) {
                 Case nextCase = caseALaPosition(nextPos);
-                if (nextCase.peutEtreParcouru() && !(nextCase instanceof Porte)) {
+                if (nextCase.peutEtreParcouru() && !(nextCase instanceof Porte) && !(nextCase.getEntite() instanceof Bloc) ) {
+                    //Vérifier le contenu de l'entité ou de la grille suivante
                     possibleDirections.add(direction);
                 }
             }
         }
 
-        // 如果有可行的方向，则随机选择一个方向移动Ghost
+        // S'il existe une direction réalisable, choisir au hasard une direction pour déplacer Ghost.
         if (!possibleDirections.isEmpty()) {
             Random random = new Random();
             int randomIndex = random.nextInt(possibleDirections.size());
@@ -322,7 +334,6 @@ public class Jeu extends Observable {
             deplacerEntite(e, randomDirection);
         }
     }
-
 
     private Point calculerPointCible(Point pCourant, Direction d) {
         Point pCible = null;
@@ -337,8 +348,6 @@ public class Jeu extends Observable {
         
         return pCible;
     }
-    
-
     
     /** Indique si p est contenu dans la grille
      */

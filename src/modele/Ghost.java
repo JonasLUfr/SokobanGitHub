@@ -26,7 +26,6 @@ public class Ghost extends Entite {
     }
     @Override
     public boolean pousser(Direction direction) {
-        // Ghost 不会被推动
         return false;
     }
 }
